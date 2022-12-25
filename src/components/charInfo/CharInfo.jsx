@@ -1,5 +1,6 @@
 import React from 'react';
 import './CharInfo.scss';
+import PropTypes from 'prop-types';
 import MarvelService from '../../services/MarvelService';
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/errorMessage';
@@ -10,7 +11,7 @@ class charInfo extends React.Component {
 
   // eslint-disable-next-line react/state-in-constructor
   state = {
-    charInfo: null,
+    charDb: null,
     loading: false,
     error: false,
   };
@@ -52,16 +53,16 @@ class charInfo extends React.Component {
   };
 
   onCharLoaded = (char) => {
-    this.setState({ charInfo: char, loading: false });
+    this.setState({ charDb: char, loading: false });
   };
 
   render() {
-    const { charInfo, loading, error } = this.state;
-    const skeleton = charInfo || loading || error ? null : <Skeleton />;
+    const { charDb, loading, error } = this.state;
+    const skeleton = charDb || loading || error ? null : <Skeleton />;
     const errorMessage = error ? <ErrorMessage /> : null;
     const spinner = loading ? <Spinner /> : null;
-    const content = !(loading || error || !charInfo) ? (
-      <View char={charInfo} />
+    const content = !(loading || error || !charDb) ? (
+      <View char={charDb} />
     ) : null;
 
     return (
@@ -75,8 +76,18 @@ class charInfo extends React.Component {
   }
 }
 
-function View({ char }) {
-  const { name, description, thumbnail, homepage, wiki, comics } = char;
+charInfo.defaultProps = {
+  charId: null,
+};
+
+charInfo.propTypes = {
+  charId: PropTypes.number,
+};
+
+function View(props) {
+  const {
+    char: { name, description, thumbnail, homepage, wiki, comics },
+  } = props;
   const style =
     thumbnail ===
     'http://i.annihil.us/u/prod/marvel/i/mg/b/40/image_not_available.jpg'

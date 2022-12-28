@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './CharInfo.scss';
 import PropTypes from 'prop-types';
 import MarvelService from '../../services/MarvelService';
@@ -6,74 +6,58 @@ import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/errorMessage';
 import Skeleton from '../skeleton/Skeleton';
 
-class charInfo extends React.Component {
-  marvelService = new MarvelService();
+function charInfo(props) {
+  const marvelService = new MarvelService();
 
-  // eslint-disable-next-line react/state-in-constructor
-  state = {
-    charDb: null,
-    loading: false,
-    error: false,
+  const [charDb, setCharDb] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+
+  const onCharLoading = () => {
+    setLoading(true);
   };
 
-  componentDidUpdate(prevProps) {
-    const { charId } = this.props;
-    if (prevProps.charId !== charId) {
-      this.updateChar();
-    }
-  }
+  const onCharLoaded = (char) => {
+    setCharDb(char);
+    setLoading(false);
+  };
 
-  componentWillUnmount() {
-    this.updateChar();
-  }
+  const onError = () => {
+    setLoading(false);
+    setError(true);
+  };
 
-  updateChar = () => {
-    this.onCharLoading();
-    const { charId } = this.props;
+  const updateChar = () => {
+    const { charId } = props;
     if (!charId) {
       return;
     }
-    this.marvelService
+    onCharLoading();
+    marvelService
       .getCharacter(charId)
-      .then((res) => this.onCharLoaded(res))
-      .catch(() => this.onError());
+      .then((res) => onCharLoaded(res))
+      .catch(() => onError());
   };
 
-  onError = () => {
-    this.setState({
-      loading: false,
-      error: true,
-    });
-  };
+  useEffect(() => {
+    updateChar();
+  }, [props.charId]);
 
-  onCharLoading = () => {
-    this.setState({
-      loading: true,
-    });
-  };
+  const skeleton = charDb || loading || error ? null : <Skeleton />;
+  const errorMessage = error ? <ErrorMessage /> : null;
+  const spinner = loading ? <Spinner /> : null;
+  const content = !(loading || error || !charDb) ? (
+    <View char={charDb} />
+  ) : null;
 
-  onCharLoaded = (char) => {
-    this.setState({ charDb: char, loading: false });
-  };
-
-  render() {
-    const { charDb, loading, error } = this.state;
-    const skeleton = charDb || loading || error ? null : <Skeleton />;
-    const errorMessage = error ? <ErrorMessage /> : null;
-    const spinner = loading ? <Spinner /> : null;
-    const content = !(loading || error || !charDb) ? (
-      <View char={charDb} />
-    ) : null;
-
-    return (
-      <div className='char__info'>
-        {skeleton}
-        {errorMessage}
-        {spinner}
-        {content}
-      </div>
-    );
-  }
+  return (
+    <div className='char__info'>
+      {skeleton}
+      {errorMessage}
+      {spinner}
+      {content}
+    </div>
+  );
 }
 
 charInfo.defaultProps = {

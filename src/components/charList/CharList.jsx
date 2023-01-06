@@ -1,22 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './Charlist.scss';
-import MarvelService from '../../services/MarvelService';
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/errorMessage';
+import useMarvelService from '../../services/MarvelService';
 
 function CharList(props) {
-  const marvelService = new MarvelService();
+  const { loading, error, getAllCharacters } = useMarvelService();
 
   const [charList, setCharList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [newItemLoading, setNewItemLoading] = useState(false);
   const [offset, setOffset] = useState(210);
   const [charEnded, setCharEnded] = useState(false);
-
-  const onCharListLoading = () => {
-    setNewItemLoading(true);
-  };
 
   const onCharListLoaded = (newCharList) => {
     let ended = false;
@@ -24,27 +18,18 @@ function CharList(props) {
       ended = true;
     }
     setCharList((charList) => [...charList, ...newCharList]);
-    setLoading((loading) => false);
     setNewItemLoading((newItemLoading) => false);
     setOffset((offset) => offset + 9);
     setCharEnded((charEnded) => ended);
   };
 
-  const onError = () => {
-    setLoading(false);
-    setError(true);
-  };
-
-  const onRequest = (offsetNumber) => {
-    onCharListLoading();
-    marvelService
-      .getAllCharacters(offsetNumber)
-      .then((res) => onCharListLoaded(res))
-      .catch(() => onError());
+  const onRequest = (offsetNumber, initial) => {
+    initial ? setNewItemLoading(false) : setNewItemLoading(true);
+    getAllCharacters(offsetNumber).then((res) => onCharListLoaded(res));
   };
 
   useEffect(() => {
-    onRequest();
+    onRequest(offset, true);
   }, []);
 
   const itemRefs = useRef([]);
@@ -86,14 +71,13 @@ function CharList(props) {
   };
 
   const items = renderItems(charList);
-  const spinner = loading ? <Spinner /> : null;
+  const spinner = loading && !newItemLoading ? <Spinner /> : null;
   const errorMessage = error ? <ErrorMessage /> : null;
-  const content = !(loading || error) ? items : null;
   return (
     <div className='char__list'>
       {spinner}
       {errorMessage}
-      {content}
+      {items}
       <button
         type='button'
         style={{ display: charEnded ? 'none' : 'block' }}
